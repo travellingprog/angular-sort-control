@@ -21,11 +21,15 @@
             return {
                 restrict: 'AE',
                 link: function ($scope, $element, $attributes) {
-                    $scope.$on('sortControl.sortRequest', function (evt, sortKey, sortDir) {
-                        $scope.$broadcast('sortControl.sortPending', sortKey, sortDir);
+                    var onSortAttr = $attributes.onSort.split(':'),
+                        onSortFn = onSortAttr.pop(),
+                        affix = onSortAttr[0] ? '.' + onSortAttr[0] : '';
 
-                        $scope.$eval($attributes.onSort, { sortKey: sortKey, sortDir: sortDir }).then(function () {
-                            $scope.$broadcast('sortControl.sortDone', sortKey, sortDir);
+                    $scope.$on('sortControl.sortRequest' + affix, function (evt, sortKey, sortDir) {
+                        $scope.$broadcast('sortControl.sortPending' + affix, sortKey, sortDir);
+
+                        $scope.$eval(onSortFn, { sortKey: sortKey, sortDir: sortDir }).then(function () {
+                            $scope.$broadcast('sortControl.sortDone' + affix, sortKey, sortDir);
                         });
                     });
                 }
@@ -38,20 +42,22 @@
                 replace: true,
                 transclude: true,
                 link: function ($scope, $element, $attributes) {
-                    var sortKey = $attributes.sortKey,
+                    var sortKeyAttr = $attributes.sortKey.split(':'),
+                        sortKey = sortKeyAttr.pop(),
+                        affix = sortKeyAttr[0] ? '.' + sortKeyAttr[0] : '',
                         sortDir = null;
 
                     $element.on('click', function (evt) {
                         if (evt.target.className === 'sort-control-button') {
-                            $scope.$emit('sortControl.sortRequest', sortKey, sortDir ? -sortDir : 1);
+                            $scope.$emit('sortControl.sortRequest' + affix, sortKey, sortDir ? -sortDir : 1);
                         }
                     });
 
-                    $scope.$on('sortControl.sortPending', function (evt) {
+                    $scope.$on('sortControl.sortPending' + affix, function (evt) {
                         $element.find('button').attr('disabled', 'true'); // @todo: '' doesn't work for some reason
                     });
 
-                    $scope.$on('sortControl.sortDone', function (evt, _sortKey, _sortDir) {
+                    $scope.$on('sortControl.sortDone' + affix, function (evt, _sortKey, _sortDir) {
                         $element.find('button').removeAttr('disabled');
 
                         if (sortKey === _sortKey) {
